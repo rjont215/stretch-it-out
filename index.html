@@ -43,10 +43,12 @@
   .count b{color:var(--accent); font-weight:700;}
 
   /* Timer card */
-  .timer{background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:20px 18px; margin-bottom:16px;}
+  .sticky-timer{position:sticky; top:0; z-index:15; background:var(--ink); margin:0 -16px 16px; padding:6px 16px 0; transition:box-shadow .2s;}
+  .sticky-timer.stuck{box-shadow:0 12px 18px -12px rgba(0,0,0,.7);}
+  .timer{background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:20px 18px; transition:padding .2s;}
   .ringwrap{display:flex; align-items:center; gap:18px;}
-  .ring{position:relative; width:118px; height:118px; flex:0 0 auto;}
-  .ring svg{transform:rotate(-90deg); display:block;}
+  .ring{position:relative; width:118px; height:118px; flex:0 0 auto; transition:width .2s, height .2s;}
+  .ring svg{width:100%; height:100%; transform:rotate(-90deg); display:block;}
   .ring .track{stroke:var(--line); fill:none; stroke-width:9;}
   .ring .prog{stroke:var(--accent); fill:none; stroke-width:9; stroke-linecap:round; transition:stroke-dashoffset .12s linear, stroke .3s;}
   .ring .time{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;}
@@ -56,6 +58,13 @@
   .now .label{font-size:11px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase;}
   .now .name{font-family:var(--disp); font-weight:600; font-size:18px; margin-top:3px; line-height:1.2;}
   .now .breathe{font-size:12px; color:var(--muted); margin-top:8px;}
+  /* condensed state while scrolled */
+  .sticky-timer.stuck .timer{padding:13px 16px;}
+  .sticky-timer.stuck .ring{width:82px; height:82px;}
+  .sticky-timer.stuck .ring .time .t{font-size:22px;}
+  .sticky-timer.stuck .now .breathe{display:none;}
+  .sticky-timer.stuck .controls{margin-top:12px;}
+  #stickySentinel{height:1px;}
 
   .controls{display:flex; gap:10px; align-items:center; margin-top:18px;}
   .btn-main{flex:1; background:var(--accent); color:#0b0f12; border:none; border-radius:12px; padding:15px 0; font-family:var(--disp); font-weight:700; font-size:16px; cursor:pointer; letter-spacing:.01em;}
@@ -63,7 +72,8 @@
   .btn-ghost{background:var(--row); color:var(--text); border:1px solid var(--line); border-radius:12px; padding:15px 18px; font-family:var(--disp); font-weight:600; font-size:14px; cursor:pointer;}
   .btn-ghost:active{background:var(--row-hi);}
 
-  .guided{display:flex; align-items:center; gap:10px; margin-top:14px; padding-top:14px; border-top:1px solid var(--line);}
+  .setup{background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:16px 18px; margin-bottom:16px;}
+  .guided{display:flex; align-items:center; gap:10px; padding-bottom:14px; border-bottom:1px solid var(--line);}
   .guided .txt{flex:1;}
   .guided .txt .g1{font-size:13.5px; font-weight:500;}
   .guided .txt .g2{font-size:11.5px; color:var(--muted); margin-top:2px;}
@@ -104,9 +114,7 @@
   .dur-opts .opt.deflt::after{content:" ·default"; font-weight:400; opacity:.7; font-size:10px;}
 
   /* Transition control */
-  .transition{margin-top:14px; padding-top:14px; border-top:1px solid var(--line); transition:opacity .2s;}
-  .transition.off{opacity:.38;}
-  .transition.off input[type="range"]{pointer-events:none;}
+  .transition{margin-top:14px;}
   .transition .head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px;}
   .transition .head .g1{font-size:13.5px; font-weight:500;}
   .transition .head .val{font-family:var(--disp); font-weight:700; font-size:15px; color:var(--accent); font-variant-numeric:tabular-nums;}
@@ -155,30 +163,35 @@
     <div class="count"><b id="doneN">0</b>/<span id="totalN">0</span></div>
   </div>
 
-  <div class="timer">
-    <div class="ringwrap">
-      <div class="ring">
-        <svg viewBox="0 0 118 118" width="118" height="118">
-          <circle class="track" cx="59" cy="59" r="52"></circle>
-          <circle class="prog" id="prog" cx="59" cy="59" r="52"></circle>
-        </svg>
-        <div class="time">
-          <div class="t" id="tDisplay">0:45</div>
-          <div class="side" id="tSide"></div>
+  <div id="stickySentinel"></div>
+  <div class="sticky-timer" id="stickyTimer">
+    <div class="timer">
+      <div class="ringwrap">
+        <div class="ring">
+          <svg viewBox="0 0 118 118" width="118" height="118">
+            <circle class="track" cx="59" cy="59" r="52"></circle>
+            <circle class="prog" id="prog" cx="59" cy="59" r="52"></circle>
+          </svg>
+          <div class="time">
+            <div class="t" id="tDisplay">0:45</div>
+            <div class="side" id="tSide"></div>
+          </div>
+        </div>
+        <div class="now">
+          <div class="label" id="nowLabel">Ready</div>
+          <div class="name" id="nowName">Tap Time this on any stretch</div>
+          <div class="breathe">Ease in · breathe · no bouncing</div>
         </div>
       </div>
-      <div class="now">
-        <div class="label" id="nowLabel">Ready</div>
-        <div class="name" id="nowName">Tap Time this on any stretch</div>
-        <div class="breathe">Ease in · breathe · no bouncing</div>
+
+      <div class="controls">
+        <button class="btn-main" id="startBtn">Start</button>
+        <button class="btn-ghost" id="resetBtn">Reset</button>
       </div>
     </div>
+  </div>
 
-    <div class="controls">
-      <button class="btn-main" id="startBtn">Start</button>
-      <button class="btn-ghost" id="resetBtn">Reset</button>
-    </div>
-
+  <div class="setup">
     <div class="guided">
       <div class="txt">
         <div class="g1">Guided run-through</div>
@@ -195,7 +208,7 @@
         <span class="g1">Time between stretches</span>
         <span class="val" id="transVal">10s</span>
       </div>
-      <div class="g2">Buffer before each stretch and each side change in guided mode.</div>
+      <div class="g2">Controls length of buffer between each stretch and each side change.</div>
       <input type="range" id="transRange" min="3" max="20" step="1" value="10" aria-label="Time between stretches in seconds">
       <div class="ticks"><span>3s</span><span>20s</span></div>
     </div>
@@ -292,10 +305,13 @@ const RING_C = 2 * Math.PI * 52;
 let timer = null;
 let remaining = 0, total = 45;
 let running = false;
+let paused = false;
 let guided = false;
-let queue = [];       // guided segments
+let queue = [];         // segments for the current run
 let qIndex = 0;
-let manualExIndex = -1; // which exercise loaded in manual mode (-1 = free timer)
+let runMode = null;     // 'guided' | 'single' | null
+let phase = "idle";     // 'idle' | 'prep' | 'hold' | 'done'
+let manualExIndex = -1; // which exercise is loaded for a single run (-1 = none)
 let wakeLock = null;
 let audioCtx = null;
 
@@ -328,6 +344,8 @@ document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState=
 
 /* ---------- Rendering ---------- */
 const el = id => document.getElementById(id);
+const ringEl = document.querySelector(".ring");
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function setAccent(color){
   document.documentElement.style.setProperty("--accent", color);
@@ -410,7 +428,7 @@ function updateCount(){ el("doneN").textContent = done[current].size; }
 
 function highlight(i){
   document.querySelectorAll(".ex.active").forEach(e=>e.classList.remove("active"));
-  if(i>=0){ const row = el("ex-"+i); if(row){ row.classList.add("active"); row.scrollIntoView({block:"nearest", behavior:"smooth"}); } }
+  if(i>=0){ const row = el("ex-"+i); if(row){ row.classList.add("active"); row.scrollIntoView({block:"center", behavior:"smooth"}); } }
 }
 
 /* ---------- Interactions ---------- */
@@ -430,11 +448,13 @@ function toggleDone(i){
 
 function loadExercise(i){
   ensureAudio();
-  if(guided){ el("guidedToggle").checked = false; guided = false; updateTransitionState(); }
-  if(running) stopTimer();
+  if(guided){ el("guidedToggle").checked = false; guided = false; }
+  stopTimer();
   const x = ROUTINES[current].ex[i];
   manualExIndex = i;
+  phase = "idle";
   total = effSecs(x); remaining = total;
+  el("startBtn").textContent = "Start";
   el("nowLabel").textContent = "Loaded";
   el("nowName").textContent = x.name;
   el("tSide").textContent = x.perSide ? "Side 1" : "";
@@ -442,27 +462,21 @@ function loadExercise(i){
   drawTime();
 }
 
-/* enable/disable the transition control based on guided mode */
-function updateTransitionState(){
-  el("transWrap").classList.toggle("off", !guided);
-  transRange.disabled = !guided;
-}
-
 /* guided toggle */
 el("guidedToggle").onchange = e =>{
   guided = e.target.checked;
-  if(running) stopTimer();
-  updateTransitionState();
-  el("nowLabel").textContent = guided ? "Guided" : "Ready";
-  el("nowName").textContent = guided ? "Press Start to run the routine" : "Tap Time this on any stretch";
-  el("tSide").textContent = "";
+  stopTimer();
+  resetTimerFace();
 };
 
 /* main button */
 el("startBtn").onclick = ()=>{
   ensureAudio();
-  if(running){ pauseTimer(); return; }
-  if(guided){ startGuided(); } else { startManual(); }
+  if(running){ pauseRun(); return; }
+  if(paused){ resumeRun(); return; }
+  if(guided){ startRun(buildQueue(), "guided"); }
+  else if(manualExIndex >= 0){ startRun(buildSingle(manualExIndex), "single"); }
+  else { el("nowName").textContent = "Tap Time this on a stretch first"; }
 };
 el("resetBtn").onclick = ()=>{
   stopTimer();
@@ -473,17 +487,38 @@ el("resetChecks").onclick = ()=>{
   renderList(); updateCount();
 };
 
-/* ---------- Timer core ---------- */
+/* ---------- Ring drawing + pulse ---------- */
 function drawTime(){
-  const secsLeft = Math.ceil(remaining);
-  const m = Math.floor(secsLeft/60), s = secsLeft%60;
-  el("tDisplay").textContent = m + ":" + String(s).padStart(2,"0");
-  const frac = total>0 ? remaining/total : 0;
-  el("prog").style.strokeDasharray = RING_C;
-  el("prog").style.strokeDashoffset = RING_C * (1 - frac);
+  if(phase === "prep"){
+    el("tDisplay").textContent = Math.max(1, Math.ceil(remaining));  // 3,2,1 countdown
+    el("prog").style.strokeDasharray = RING_C;
+    el("prog").style.strokeDashoffset = 0;                            // full ring while pulsing
+  } else {
+    const secsLeft = Math.ceil(remaining);
+    const m = Math.floor(secsLeft/60), s = secsLeft%60;
+    el("tDisplay").textContent = m + ":" + String(s).padStart(2,"0");
+    const frac = total > 0 ? remaining/total : 0;
+    el("prog").style.strokeDasharray = RING_C;
+    el("prog").style.strokeDashoffset = RING_C * (1 - frac);
+  }
 }
+function pulseRing(doBeep){
+  if(doBeep) beep(560, 0.09, 0.2);
+  if(reducedMotion) return;
+  const c = ROUTINES[current].accent;
+  try{
+    ringEl.animate(
+      [ {transform:"scale(1)",    filter:"drop-shadow(0 0 0 rgba(0,0,0,0))"},
+        {transform:"scale(1.06)", filter:"drop-shadow(0 0 9px " + c + ")"},
+        {transform:"scale(1)",    filter:"drop-shadow(0 0 0 rgba(0,0,0,0))"} ],
+      {duration:600, easing:"ease-out"}
+    );
+  }catch(e){}
+}
+
+/* ---------- Run control ---------- */
 function resetTimerFace(){
-  running = false; manualExIndex = -1;
+  running = false; paused = false; phase = "idle"; manualExIndex = -1;
   el("startBtn").textContent = "Start";
   el("nowLabel").textContent = guided ? "Guided" : "Ready";
   el("nowName").textContent = guided ? "Press Start to run the routine" : "Tap Time this on any stretch";
@@ -492,100 +527,117 @@ function resetTimerFace(){
   highlight(-1);
 }
 function tick(){
+  const prevCeil = Math.ceil(remaining);
   remaining -= 0.1;
-  if(remaining <= 0){
-    remaining = 0; drawTime();
-    onIntervalEnd();
-    return;
+  if(remaining < 0) remaining = 0;
+  const nowCeil = Math.ceil(remaining);
+  if(phase === "prep" && nowCeil !== prevCeil && nowCeil >= 1){
+    pulseRing(nowCeil <= 3);                    // pulse each second; beep only in the final 3s
   }
   drawTime();
+  if(remaining <= 0){ clearInterval(timer); onSegmentEnd(); }
 }
-function startManual(){
-  if(remaining <= 0) remaining = total;
-  running = true; el("startBtn").textContent = "Pause";
-  requestWake();
-  clearInterval(timer); timer = setInterval(tick, 100);
-}
-function pauseTimer(){
-  running = false; el("startBtn").textContent = "Resume";
-  clearInterval(timer); releaseWake();
-}
-function stopTimer(){
-  running = false; el("startBtn").textContent = "Start";
-  clearInterval(timer); releaseWake();
-  queue = []; qIndex = 0;
-}
-function onIntervalEnd(){
-  if(guided){ chime(); nextSegment(); }
-  else {
-    beep(880,0.18,0.3); setTimeout(()=>beep(880,0.18,0.3),200);
-    running = false; el("startBtn").textContent = "Start";
-    clearInterval(timer); releaseWake();
-    if(manualExIndex >= 0){ done[current].add(manualExIndex); el("ex-"+manualExIndex).classList.add("done"); updateCount(); }
-  }
-}
-
-/* ---------- Guided run-through ---------- */
-function buildQueue(){
-  const r = ROUTINES[current];
-  queue = [];
-  const tp = transitionSecs;
-  r.ex.forEach((x,i)=>{
-    const hold = effSecs(x);
-    if(x.perSide){
-      queue.push({type:"prep", ex:i, secs:tp, label:x.name, side:"Side 1"});
-      queue.push({type:"hold", ex:i, secs:hold, label:x.name, side:"Side 1"});
-      queue.push({type:"prep", ex:i, secs:tp, label:x.name, side:"Side 2"});
-      queue.push({type:"hold", ex:i, secs:hold, label:x.name, side:"Side 2", last:true});
-    } else {
-      queue.push({type:"prep", ex:i, secs:tp, label:x.name, side:""});
-      queue.push({type:"hold", ex:i, secs:hold, label:x.name, side:"", last:true});
-    }
-  });
-}
-function startGuided(){
-  buildQueue();
-  qIndex = 0;
-  running = true; el("startBtn").textContent = "Pause";
+function startRun(q, mode){
+  queue = q; qIndex = 0; runMode = mode;
+  running = true; paused = false;
+  el("startBtn").textContent = "Pause";
   requestWake();
   runSegment();
 }
-function runSegment(){
-  if(qIndex >= queue.length){ finishGuided(); return; }
-  const seg = queue[qIndex];
-  total = seg.secs; remaining = seg.secs;
-  highlight(seg.ex);
-  if(seg.type === "prep"){
-    el("nowLabel").textContent = "Get ready" + (seg.side ? " · " + seg.side : "");
-    el("nowName").textContent = "Next: " + seg.label;
-    el("tSide").textContent = seg.side;
-    beep(520,0.1,0.2);
-  } else {
-    el("nowLabel").textContent = "Hold";
-    el("nowName").textContent = seg.label;
-    el("tSide").textContent = seg.side;
-    beep(880,0.12,0.25);
-  }
-  drawTime();
+function pauseRun(){
+  running = false; paused = true;
+  el("startBtn").textContent = "Resume";
+  clearInterval(timer); releaseWake();
+}
+function resumeRun(){
+  running = true; paused = false;
+  el("startBtn").textContent = "Pause";
+  requestWake();
   clearInterval(timer); timer = setInterval(tick, 100);
 }
-function nextSegment(){
+function stopTimer(){
+  running = false; paused = false; phase = "idle";
+  el("startBtn").textContent = "Start";
+  clearInterval(timer); releaseWake();
+  queue = []; qIndex = 0; runMode = null;
+}
+
+/* ---------- Segment queues ---------- */
+// A single stretch: fixed 3s get-into-position, then hold; if per-side, buffer + second side.
+function buildSingle(i){
+  const x = ROUTINES[current].ex[i];
+  const hold = effSecs(x);
+  const q = [];
+  q.push({type:"prep", ex:i, secs:3, side: x.perSide ? "Side 1" : ""});
+  q.push({type:"hold", ex:i, secs:hold, side: x.perSide ? "Side 1" : "", last: !x.perSide});
+  if(x.perSide){
+    q.push({type:"prep", ex:i, secs:transitionSecs, side:"Side 2"});
+    q.push({type:"hold", ex:i, secs:hold, side:"Side 2", last:true});
+  }
+  return q;
+}
+// The whole routine, using the slider buffer before each stretch and side change.
+function buildQueue(){
+  const r = ROUTINES[current];
+  const q = [];
+  r.ex.forEach((x,i)=>{
+    const hold = effSecs(x);
+    if(x.perSide){
+      q.push({type:"prep", ex:i, secs:transitionSecs, side:"Side 1"});
+      q.push({type:"hold", ex:i, secs:hold, side:"Side 1"});
+      q.push({type:"prep", ex:i, secs:transitionSecs, side:"Side 2"});
+      q.push({type:"hold", ex:i, secs:hold, side:"Side 2", last:true});
+    } else {
+      q.push({type:"prep", ex:i, secs:transitionSecs, side:""});
+      q.push({type:"hold", ex:i, secs:hold, side:"", last:true});
+    }
+  });
+  return q;
+}
+function runSegment(){
+  if(qIndex >= queue.length){ finishRun(); return; }
   const seg = queue[qIndex];
-  if(seg && seg.type === "hold" && seg.last){
-    done[current].add(seg.ex);
-    const row = el("ex-"+seg.ex); if(row) row.classList.add("done");
-    updateCount();
+  const name = ROUTINES[current].ex[seg.ex].name;
+  total = seg.secs; remaining = seg.secs; phase = seg.type;
+  highlight(seg.ex);
+  el("tSide").textContent = seg.side || "";
+  if(seg.type === "prep"){
+    el("nowLabel").textContent = "Get ready" + (seg.side ? " · " + seg.side : "");
+    el("nowName").textContent = name;
+    drawTime();
+    pulseRing(seg.secs <= 3);                   // first pulse immediately
+  } else {
+    el("nowLabel").textContent = "Hold";
+    el("nowName").textContent = name;
+    beep(880, 0.12, 0.25);
+    drawTime();
+  }
+  clearInterval(timer); timer = setInterval(tick, 100);
+}
+function onSegmentEnd(){
+  const seg = queue[qIndex];
+  if(seg.type === "hold"){
+    chime();                                    // a side / stretch just finished
+    if(seg.last){
+      done[current].add(seg.ex);
+      const row = el("ex-"+seg.ex); if(row) row.classList.add("done");
+      updateCount();
+    }
   }
   qIndex++;
   runSegment();
 }
-function finishGuided(){
+function finishRun(){
+  const wasGuided = runMode === "guided";
   stopTimer();
-  chime(); setTimeout(chime, 400);
+  phase = "done";
+  chime(); if(wasGuided) setTimeout(chime, 400);
   el("nowLabel").textContent = "Done";
-  el("nowName").textContent = "Routine complete — nice work.";
+  el("nowName").textContent = wasGuided ? "Routine complete — nice work." : "Done — tap Time this for the next one.";
   el("tSide").textContent = "";
-  total = 1; remaining = 0; drawTime();
+  total = 1; remaining = 0;
+  el("prog").style.strokeDashoffset = RING_C;
+  el("tDisplay").textContent = "0:00";
   highlight(-1);
 }
 
@@ -604,10 +656,18 @@ transRange.oninput = e =>{
   store.set("stretch.transition", String(transitionSecs));
 };
 
+/* ---------- Sticky timer shadow / condense while scrolled ---------- */
+try{
+  const io = new IntersectionObserver(
+    ([e]) => el("stickyTimer").classList.toggle("stuck", !e.isIntersecting),
+    {threshold:0}
+  );
+  io.observe(el("stickySentinel"));
+}catch(e){}
+
 /* ---------- Init ---------- */
 setAccent(ROUTINES[0].accent);
 reflectTransition();
-updateTransitionState();
 renderTabs();
 renderRoutine();
 drawTime();
